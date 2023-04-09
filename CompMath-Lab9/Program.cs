@@ -1,101 +1,84 @@
-﻿namespace CompMath_Lab9;
+﻿using CompMath_Lab9.ODE;
+
+namespace CompMath_Lab9;
 
 public class Program
 {
-	static (double, double)[] SolveColocation(ODEData odeData, BoundsData boundsData, double h)
+	const double H = 0.05;
+	const int Precision = 4;
+
+	static readonly ODEData ODEData = new(
+		P: x => 1.5 / x,
+		Q: x => -1.0 / x,
+		F: x => x + 1
+	);
+
+	static readonly BoundsData BoundsData = new(
+		X0: 1.2,
+		X1: 1.5,
+
+		A0: 1.0,
+		B0: 1.0,
+		C0: 1.0,
+
+		A1: 2.0,
+		B1: -1.0,
+		C1: 1.5
+	);
+
+	static readonly FunctionData ExactSolution = new(
+		F: x => (2.22679 * Math.Exp(2 * Math.Sqrt(x))
+			+ 4.76128 * Math.Exp(-2 * Math.Sqrt(x)))
+			/ Math.Sqrt(x) - (x + 3) * (x + 3),
+
+		DF: x => (2.22679 * Math.Exp(2 * Math.Sqrt(x)) * (Math.Sqrt(x) - 0.5)
+			- 4.76128 * Math.Exp(-2 * Math.Sqrt(x)) * (Math.Sqrt(x) + 0.5))
+			/ Math.Pow(x, 1.5) - 2 * (x + 3),
+
+		DDF: x => (2.22679 * Math.Exp(2 * Math.Sqrt(x)) * (x - 1.5 * Math.Sqrt(x) + 0.75)
+			+ 4.76128 * Math.Exp(-2 * Math.Sqrt(x)) * (x + 1.5 * Math.Sqrt(x) + 0.75))
+			/ Math.Pow(x, 2.5) - 2
+	);
+
+	static readonly Dictionary<TestResult, string> ResultMessage = new()
 	{
-		double x0 = boundsData.X0;
-		double x1 = boundsData.X1;
+		[TestResult.Pass] = "Test passed",
+		[TestResult.EquationFail] = "Equation condition test failed",
+		[TestResult.BoundaryFail] = "Boundary conditions test failed"
+	};
 
-		var (d, g) = LinearSystem.Solve2(
-			x0 * boundsData.A0 + boundsData.B0, boundsData.A0, boundsData.C0,
-			x1 * boundsData.A1 + boundsData.B1, boundsData.A1, boundsData.C1);
-		var f0 = new SequenceFunctionData
-		{
-			F = (x, _) => d * x + g,
-			DF = (_, _) => d,
-			DDF = (_, _) => 0.0
-		};
-
-		double w = x1 - x0;
-		int n = (int)(w / h) + 1;
-
-		var ss = new string[n];
-		var f = new SequenceFunctionData[n];
-		for (int j = 0; j < n; j++)
-		{
-			double ComputeS(int i) => -(boundsData.A1 * w * w + boundsData.B1 * (i + 2) * w)
-				/ (boundsData.A1 * w + boundsData.B1 * (i + 1));
-			f[j] = new()
-			{
-				F = (x, i) => Math.Pow(x - x0, i + 1) * (ComputeS(i) + x - x0),
-				DF = (x, i) => Math.Pow(x - x0, i) * ((i + 1) * ComputeS(i) + (i + 2) * (x - x0)),
-				DDF = (x, i) => Math.Pow(x - x0, i - 1) * (i + 1) * (i * ComputeS(i) + (i + 2) * (x - x0))
-			};
-		}
-
-		var x = Enumerable.Range(0, n).Select(k => x0 + k * h);
-		var a = x.Select(x => f.Select((f, i) => odeData.L(f, x, i + 1)).ToArray()).ToArray();
-		var b = x.Select(x => odeData.F(x) - odeData.L(f0, x, 0)).ToArray();
-		var c = LinearSystem.Solve(a, b);
-
-		double Res(double x) => f0.F(x, 0) +
-			c.Zip(f)
-				.Select((t, i) => (C: t.First, FD: t.Second, I: i + 1))
-				.Sum(t => t.C * t.FD.F(x, t.I));
-
-		/*double Dres(double x) => f0.DF(x, 0) +
-			c.Zip(f)
-				.Select((t, i) => (C: t.First, FD: t.Second, I: i + 1))
-				.Sum(t => t.C * t.FD.DF(x, t.I));
-
-		double DDres(double x) => f0.DDF(x, 0) +
-			c.Zip(f)
-				.Select((t, i) => (C: t.First, FD: t.Second, I: i + 1))
-				.Sum(t => t.C * t.FD.DDF(x, t.I));
-
-		Console.WriteLine(2 * Res(x1) - Dres(x1));
-		Console.WriteLine();*/
-
-		return x.Select(x => (x, Res(x))).ToArray();
+	static void TestSolution(FunctionData functionData, string solutionName)
+	{
+		var testResult = Tester.Test(functionData, ODEData, BoundsData, H, Precision);
+		Console.WriteLine($"{solutionName} solution: {ResultMessage[testResult]}");
 	}
 
 	static void Main()
 	{
 		Thread.CurrentThread.CurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
 
-		var odeData = new ODEData
+		var x = Enumerable.Range(0, (int)((BoundsData.X1 - BoundsData.X0) / H) + 1)
+			.Select(k => BoundsData.X0 + k * H);
+
+		var (solution, coefficients) = Collocation.Solve(ODEData, BoundsData, H);
+
+		var y = new Dictionary<string, IEnumerable<double>>()
 		{
-			P = x => 1.5 / x,
-			Q = x => -1.0 / x,
-			F = x => x + 1
+			["Exact"] = x.Select(x => ExactSolution.F(x)),
+			["Collocation"] = x.Select(x => solution.F(x))
 		};
 
-		var boundsData = new BoundsData
-		{
-			X0 = 1.2,
-			X1 = 1.5,
-
-			A0 = 1.0,
-			B0 = 1.0,
-			C0 = 1.0,
-
-			A1 = 2.0,
-			B1 = -1.0,
-			C1 = 1.5
-		};
-
-		double x0 = 1.2;
-		double x1 = 1.5;
-		double h = 0.05;
-
-		Function sol = x => (2.22679 * Math.Exp(2 * Math.Sqrt(x)) + 4.76128 * Math.Exp(-2 * Math.Sqrt(x))) / Math.Sqrt(x) - (x + 3) * (x + 3);
-		var x = Enumerable.Range(0, (int)((x1 - x0) / h) + 1).Select(k => x0 + k * h);
-		var res = x.Select(x => (x, sol(x)));
-
-		Console.WriteLine(string.Join(Environment.NewLine, SolveColocation(odeData, boundsData, h)));
+		Drawer.DrawTable(x, "x", y, "y(x)", Precision);
 		Console.WriteLine();
-		Console.WriteLine(string.Join(Environment.NewLine, res));
+
+		Console.WriteLine("Tests:");
+		TestSolution(solution, "Collocation");
+		TestSolution(ExactSolution, "Exact");
+		Console.WriteLine();
+
+		Console.WriteLine("Orthogonal functions coefficients:");
+		Console.WriteLine(string.Join(Environment.NewLine, coefficients.Select((c, i) => $"c{i + 1} = {c}")));
+
 		Console.ReadLine();
 	}
 }

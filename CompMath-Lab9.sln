@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.4.33403.182
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompMath-Lab9", "CompMath-Lab9\CompMath-Lab9.csproj", "{1868EA0E-FDA3-4D9C-96F4-59C0BC216398}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CompMath-Lab9", "CompMath-Lab9\CompMath-Lab9.csproj", "{1868EA0E-FDA3-4D9C-96F4-59C0BC216398}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompMath-Lab9.ODE", "CompMath-Lab9.ODE\CompMath-Lab9.ODE.csproj", "{6E4392F4-3471-44AA-BFC7-089772BE5A54}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{1868EA0E-FDA3-4D9C-96F4-59C0BC216398}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1868EA0E-FDA3-4D9C-96F4-59C0BC216398}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1868EA0E-FDA3-4D9C-96F4-59C0BC216398}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E4392F4-3471-44AA-BFC7-089772BE5A54}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E4392F4-3471-44AA-BFC7-089772BE5A54}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E4392F4-3471-44AA-BFC7-089772BE5A54}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E4392F4-3471-44AA-BFC7-089772BE5A54}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

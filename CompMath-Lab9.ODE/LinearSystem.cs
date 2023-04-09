@@ -1,38 +1,33 @@
-﻿namespace CompMath_Lab9;
+﻿namespace CompMath_Lab9.ODE;
 
 public static class LinearSystem
 {
 	public static (double, double) Solve2(double a00, double a01, double b0, double a10, double a11, double b1)
 	{
-		double q = a00 * a11 - a01 * a10;
-		return ((a11 * b0 - a01 * b1) / q, (a00 * b1 - a10 * b0) / q);
+		double d = a00 * a11 - a01 * a10;
+		if (d == 0.0)
+		{
+			throw new ArgumentException("Matrix is singular");
+		}
+		return ((a11 * b0 - a01 * b1) / d, (a00 * b1 - a10 * b0) / d);
 	}
 
-	public static double[] Solve(double[][] a, double[] b)
+	public static double[] Solve(double[][] matrix)
 	{
-		int m = a.Length;
-		if (a.Any(row => row.Length != m))
-		{
-			throw new ArgumentException("Matrix is not square");
-		}
-		if (m != b.Length)
-		{
-			throw new ArgumentException("Matrixes have different number of rows");
-		}
-
-		double[][] matrix = a
-			.Zip(b)
-			.Select(t => t.First.Append(t.Second).ToArray())
-			.ToArray();
+		int m = matrix.Length;
 		int n = m + 1;
+		if (matrix.Any(row => row.Length != n))
+		{
+			throw new ArgumentException("Matrix has wrong dimensions", nameof(matrix));
+		}
 
 		for (int k = 0; k < m; k++)
 		{
 			int kMax = matrix
 				.Skip(k)
-				.Select((row, i) => (row[k], i))
-				.MaxBy(t => Math.Abs(t.Item1))
-				.Item2 + k;
+				.Select((row, i) => (First: row[k], I: i))
+				.MaxBy(t => Math.Abs(t.First))
+				.I + k;
 
 			if (matrix[kMax][k] == 0.0)
 			{
@@ -64,6 +59,6 @@ public static class LinearSystem
 				}
 			}
 		}
-		return matrix.Select(row => row.Last()).ToArray();
+		return matrix.Select(row => row[m]).ToArray();
 	}
 }
